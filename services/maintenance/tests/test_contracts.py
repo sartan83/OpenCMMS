@@ -9,7 +9,7 @@ from .test_api import plan_data
 def test_plan_contracts(api_client, asset):
     response = api_client.post('/api/maintenance/plans/', plan_data(), format='json')
     assert_matches_contract(response.json(), 'maintenance', 'MaintenancePlanSerializer')
-    listed = api_client.get('/api/maintenance/plans/').json()[0]
+    listed = api_client.get('/api/maintenance/plans/').json()['results'][0]
     assert_matches_contract(listed, 'maintenance', 'MaintenancePlanListSerializer')
     template = api_client.post(
         '/api/maintenance/templates/',

@@ -31,7 +31,7 @@ def test_plan_crud_and_actions(api_client, asset, bus):
     ).status_code == 400
     listed = api_client.get('/api/maintenance/plans/?equipment=10')
     assert listed.status_code == 200
-    assert len(listed.data) == 1
+    assert len(listed.data['results']) == 1
     assert api_client.get(f'/api/maintenance/plans/{plan_id}/').status_code == 200
     assert api_client.patch(
         f'/api/maintenance/plans/{plan_id}/', {'title': 'Updated'}, format='json'
