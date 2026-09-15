@@ -76,8 +76,8 @@ def test_record_crud_and_filters(client, asset, user):
     assert record['inspector'] == user.id
     assert record['inspector_name'] == 'Ins Pector'
     assert client.get('/api/inspections/').status_code == 200
-    assert len(client.get('/api/inspections/?equipment=1').json()) == 1
-    assert len(client.get('/api/inspections/?result=pass').json()) == 1
+    assert len(client.get('/api/inspections/?equipment=1').json()['results']) == 1
+    assert len(client.get('/api/inspections/?result=pass').json()['results']) == 1
     assert client.get(f'/api/inspections/{record_id}/').status_code == 200
     assert client.patch(
         f'/api/inspections/{record_id}/',
