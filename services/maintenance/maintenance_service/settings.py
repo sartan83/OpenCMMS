@@ -1,0 +1,115 @@
+import os
+import sys
+from pathlib import Path
+from urllib.parse import unquote, urlparse
+
+from django.core.exceptions import ImproperlyConfigured
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from cmms_common.logging import build_logging_config
+
+DEBUG = (os.environ.get('DEBUG') or 'True').lower() == 'true'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-maintenance-dev-key'
+    else:
+        raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is false')
+ALLOWED_HOSTS = (os.environ.get('ALLOWED_HOSTS') or '*').split(',')
+
+INSTALLED_APPS = [
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
+    'django.contrib.sessions',
+    'django.contrib.admin',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'corsheaders',
+    'django_prometheus',
+    'django_filters',
+    'pm',
+]
+MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
+]
+ROOT_URLCONF = 'maintenance_service.urls'
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'DIRS': [],
+    'APP_DIRS': True,
+    'OPTIONS': {'context_processors': [
+        'django.template.context_processors.request',
+        'django.contrib.auth.context_processors.auth',
+        'django.contrib.messages.context_processors.messages',
+    ]},
+}]
+WSGI_APPLICATION = 'maintenance_service.wsgi.application'
+
+if os.environ.get('MAINTENANCE_POSTGRES_HOST'):
+    DATABASES = {'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('MAINTENANCE_POSTGRES_DB') or 'maintenance',
+        'USER': os.environ.get('MAINTENANCE_POSTGRES_USER') or 'maintenance',
+        'PASSWORD': os.environ.get('MAINTENANCE_POSTGRES_PASSWORD') or 'maintenance',
+        'HOST': os.environ.get('MAINTENANCE_POSTGRES_HOST') or 'localhost',
+        'PORT': os.environ.get('MAINTENANCE_POSTGRES_PORT') or '5432',
+    }}
+else:
+    DATABASES = {'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }}
+
+source_database_url = os.environ.get('SOURCE_DATABASE_URL') or None
+if source_database_url:
+    parsed_database_url = urlparse(source_database_url)
+    if parsed_database_url.scheme not in {'postgres', 'postgresql'}:
+        raise ImproperlyConfigured('SOURCE_DATABASE_URL must use postgres or postgresql')
+    DATABASES['monolith'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': parsed_database_url.path.lstrip('/'),
+        'USER': unquote(parsed_database_url.username or ''),
+        'PASSWORD': unquote(parsed_database_url.password or ''),
+        'HOST': parsed_database_url.hostname or '',
+        'PORT': str(parsed_database_url.port or 5432),
+    }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+JWKS_URL = os.environ.get('JWKS_URL') or None
+EVENT_BUS_URL = os.environ.get('EVENT_BUS_URL') or None
+REDIS_URL = os.environ.get('REDIS_URL') or None
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or REDIS_URL or 'memory://'
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_BEAT_SCHEDULE = {
+    'evaluate-plan-triggers': {
+        'task': 'pm.tasks.evaluate_plan_triggers',
+        'schedule': 3600.0,
+    },
+}
+CELERY_TIMEZONE = 'UTC'
+SERVICE_NAME = 'maintenance'
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'cmms_common.auth.jwks.JWKSAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
+}
+LOGGING = build_logging_config((os.environ.get('LOG_FORMAT') or '').lower() == 'json')

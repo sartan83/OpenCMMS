@@ -1,1 +1,116 @@
-services: {}
+services:
+  maintenance-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: maintenance
+      POSTGRES_USER: maintenance
+      POSTGRES_PASSWORD: maintenance
+    volumes:
+      - maintenance_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U maintenance -d maintenance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  maintenance:
+    build:
+      context: .
+      dockerfile: services/maintenance/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      MAINTENANCE_POSTGRES_HOST: maintenance-db
+      MAINTENANCE_POSTGRES_DB: maintenance
+      MAINTENANCE_POSTGRES_USER: maintenance
+      MAINTENANCE_POSTGRES_PASSWORD: maintenance
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      REDIS_URL: redis://redis:6379/1
+      SERVICE_NAME: maintenance
+    command: sh -c "python services/maintenance/manage.py migrate --noinput && exec gunicorn --chdir /app/services/maintenance maintenance_service.wsgi:application --bind 0.0.0.0:8000"
+    depends_on:
+      identity:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      maintenance-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  maintenance-consumer:
+    build:
+      context: .
+      dockerfile: services/maintenance/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      MAINTENANCE_POSTGRES_HOST: maintenance-db
+      MAINTENANCE_POSTGRES_DB: maintenance
+      MAINTENANCE_POSTGRES_USER: maintenance
+      MAINTENANCE_POSTGRES_PASSWORD: maintenance
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: maintenance
+    command: ["python", "services/maintenance/manage.py", "consume_events"]
+    depends_on:
+      maintenance:
+        condition: service_healthy
+      maintenance-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  maintenance-worker:
+    build:
+      context: .
+      dockerfile: services/maintenance/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      MAINTENANCE_POSTGRES_HOST: maintenance-db
+      MAINTENANCE_POSTGRES_DB: maintenance
+      MAINTENANCE_POSTGRES_USER: maintenance
+      MAINTENANCE_POSTGRES_PASSWORD: maintenance
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/1
+      SERVICE_NAME: maintenance
+    command: sh -c "cd /app/services/maintenance && exec celery -A maintenance_service worker -l info"
+    depends_on:
+      maintenance:
+        condition: service_healthy
+      maintenance-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  maintenance-beat:
+    build:
+      context: .
+      dockerfile: services/maintenance/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      MAINTENANCE_POSTGRES_HOST: maintenance-db
+      MAINTENANCE_POSTGRES_DB: maintenance
+      MAINTENANCE_POSTGRES_USER: maintenance
+      MAINTENANCE_POSTGRES_PASSWORD: maintenance
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/1
+      SERVICE_NAME: maintenance
+    command: sh -c "cd /app/services/maintenance && exec celery -A maintenance_service beat -l info"
+    depends_on:
+      maintenance:
+        condition: service_healthy
+      maintenance-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  maintenance_pgdata:
