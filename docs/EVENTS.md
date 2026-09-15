@@ -17,3 +17,12 @@ The shared event catalog is versioned under [`contracts/events`](../contracts/ev
 `workorder.requested.request_id` it fulfils (null for work orders created
 directly through the API), so the requesting service can link the resulting
 work order without a synchronous call.
+
+### Reporting enrichment on `workorder.*` lifecycle events
+
+`workorder.created/assigned/completed/closed` accept optional, nullable reporting fields
+(`asset_code`, `asset_name`, `priority`, `title`, `assignee_name`, `planned_start`,
+`planned_end`, `actual_start`, `actual_end`, `downtime_minutes`, `labor_hours`,
+`parts_cost`, `total_cost`). The Work Order service populates whatever it knows at emit
+time; the Reporting service (Phase 3) builds its denormalized read model from these so it
+never has to call back into Work Orders synchronously.

@@ -5,8 +5,32 @@
     "actor_id": {
       "type": "integer"
     },
+    "actual_end": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "actual_start": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "asset_code": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "asset_id": {
       "type": "integer"
+    },
+    "asset_name": {
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "assignee_id": {
       "type": [
@@ -14,12 +38,56 @@
         "null"
       ]
     },
+    "assignee_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "created_at": {
       "type": "string"
+    },
+    "downtime_minutes": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "labor_hours": {
+      "type": [
+        "number",
+        "string",
+        "null"
+      ]
     },
     "maintenance_plan_id": {
       "type": [
         "integer",
+        "null"
+      ]
+    },
+    "parts_cost": {
+      "type": [
+        "number",
+        "string",
+        "null"
+      ]
+    },
+    "planned_end": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "planned_start": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "priority": {
+      "type": [
+        "string",
         "null"
       ]
     },
@@ -31,6 +99,19 @@
     },
     "status": {
       "type": "string"
+    },
+    "title": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "total_cost": {
+      "type": [
+        "number",
+        "string",
+        "null"
+      ]
     },
     "wo_code": {
       "type": "string"

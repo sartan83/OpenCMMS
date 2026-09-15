@@ -46,6 +46,22 @@ _workorder_properties = {
     'maintenance_plan_id': _integer(nullable=True),
 }
 
+_workorder_reporting_properties = {
+    'asset_code': _string(nullable=True),
+    'asset_name': _string(nullable=True),
+    'priority': _string(nullable=True),
+    'title': _string(nullable=True),
+    'assignee_name': _string(nullable=True),
+    'planned_start': _string(nullable=True),
+    'planned_end': _string(nullable=True),
+    'actual_start': _string(nullable=True),
+    'actual_end': _string(nullable=True),
+    'downtime_minutes': _integer(nullable=True),
+    'labor_hours': {'type': ['number', 'string', 'null']},
+    'parts_cost': {'type': ['number', 'string', 'null']},
+    'total_cost': {'type': ['number', 'string', 'null']},
+}
+
 SCHEMAS = {
     'audit.recorded': _event_schema(
         {
@@ -91,21 +107,34 @@ SCHEMAS = {
     'workorder.created': _event_schema(
         {
             **_workorder_properties,
+            **_workorder_reporting_properties,
             'created_at': _string(),
             'request_id': _string(nullable=True),
         },
         [*_workorder_properties, 'created_at'],
     ),
     'workorder.assigned': _event_schema(
-        {**_workorder_properties, 'assigned_at': _string()},
+        {
+            **_workorder_properties,
+            **_workorder_reporting_properties,
+            'assigned_at': _string(),
+        },
         [*_workorder_properties, 'assigned_at'],
     ),
     'workorder.completed': _event_schema(
-        {**_workorder_properties, 'completed_at': _string()},
+        {
+            **_workorder_properties,
+            **_workorder_reporting_properties,
+            'completed_at': _string(),
+        },
         [*_workorder_properties, 'completed_at'],
     ),
     'workorder.closed': _event_schema(
-        {**_workorder_properties, 'closed_at': _string()},
+        {
+            **_workorder_properties,
+            **_workorder_reporting_properties,
+            'closed_at': _string(),
+        },
         [*_workorder_properties, 'closed_at'],
     ),
     'inspection.failed': _event_schema(
