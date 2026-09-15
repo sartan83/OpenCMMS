@@ -4,6 +4,7 @@ Views for the workorders service
 import io
 import csv
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -155,6 +156,23 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        numeric_values = {}
+        for field, converter in (
+            ('downtime_minutes', int),
+            ('labor_hours', lambda value: Decimal(str(value))),
+            ('parts_cost', lambda value: Decimal(str(value))),
+            ('total_cost', lambda value: Decimal(str(value))),
+        ):
+            if field not in request.data:
+                continue
+            try:
+                numeric_values[field] = converter(request.data[field])
+            except (InvalidOperation, TypeError, ValueError):
+                return Response(
+                    {'error': f'{field} must be a valid number'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         # Update work order with completion data if provided
         actions_taken = request.data.get('actions_taken')
         if actions_taken:
@@ -163,12 +181,8 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
         # Update other completion fields if provided
         if 'root_cause' in request.data:
             work_order.root_cause = request.data['root_cause']
-        if 'downtime_minutes' in request.data:
-            work_order.downtime_minutes = request.data['downtime_minutes']
-        if 'labor_hours' in request.data:
-            work_order.labor_hours = request.data['labor_hours']
-        if 'parts_cost' in request.data:
-            work_order.parts_cost = request.data['parts_cost']
+        for field, value in numeric_values.items():
+            setattr(work_order, field, value)
         if 'notes' in request.data:
             work_order.notes = request.data['notes']
 

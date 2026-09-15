@@ -26,7 +26,16 @@ def test_lifecycle_events_published_and_validate(api_client, asset, event_bus):
     url = f'/api/workorders/{wo_id}'
     api_client.post(f'{url}/assign/', {'assignee_id': 7, 'assignee_name': 'Tech One'}, format='json')
     api_client.post(f'{url}/start/')
-    api_client.post(f'{url}/complete/', {'actions_taken': 'done', 'labor_hours': '1.5', 'parts_cost': '10'}, format='json')
+    api_client.post(
+        f'{url}/complete/',
+        {
+            'actions_taken': 'done',
+            'downtime_minutes': '15',
+            'labor_hours': '1.5',
+            'parts_cost': '10',
+        },
+        format='json',
+    )
     api_client.post(f'{url}/close/')
 
     assert _types(event_bus) == [
@@ -46,6 +55,8 @@ def test_lifecycle_events_published_and_validate(api_client, asset, event_bus):
     assert created['request_id'] is None
     assert created['assignee_name'] is None
     closed = _lifecycle(event_bus)[-1].payload
+    completed = _lifecycle(event_bus)[2].payload
+    assert completed['downtime_minutes'] == 15
     assert closed['assignee_name'] == 'Tech One'
     assert closed['labor_hours'] == '1.50'
     assert closed['total_cost'] == '10.00'

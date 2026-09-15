@@ -4,7 +4,7 @@ import pytest
 from openpyxl import Workbook, load_workbook
 
 from cmms_common.contracts import assert_matches_contract
-from workorders_api.models import WorkOrder, WorkOrderComment, WorkOrderPart
+from workorders_api.models import WorkOrder, WorkOrderComment, WorkOrderPart, WorkOrderStatus
 
 pytestmark = pytest.mark.django_db
 
@@ -91,7 +91,8 @@ def test_lifecycle_actions(api_client, work_order, admin_user, event_bus):
     assert response.status_code == 400
 
     response = api_client.post(f'{url}/complete/', {
-        'actions_taken': 'Replaced seal', 'labor_hours': '2.5', 'parts_cost': '30.00',
+        'actions_taken': 'Replaced seal', 'downtime_minutes': '15',
+        'labor_hours': '2.5', 'parts_cost': '30.00',
     }, format='json')
     assert response.status_code == 200, response.data
     data = response.json()
@@ -105,6 +106,21 @@ def test_lifecycle_actions(api_client, work_order, admin_user, event_bus):
     assert data['status'] == 'closed'
     assert data['closed_by'] == admin_user.id
     assert_matches_contract(data, 'workorders', 'WorkOrderSerializer')
+
+
+def test_complete_rejects_invalid_numeric_value_without_mutating_status(api_client, work_order):
+    work_order.status = WorkOrderStatus.IN_PROGRESS
+    work_order.save()
+
+    response = api_client.post(
+        f'/api/workorders/{work_order.id}/complete/',
+        {'actions_taken': 'Could not complete', 'downtime_minutes': 'abc'},
+        format='json',
+    )
+
+    assert response.status_code == 400
+    work_order.refresh_from_db()
+    assert work_order.status == WorkOrderStatus.IN_PROGRESS
 
 
 def test_assign_falls_back_to_id_as_name(api_client, work_order, event_bus):
