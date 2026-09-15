@@ -89,7 +89,11 @@ SCHEMAS = {
         ],
     ),
     'workorder.created': _event_schema(
-        {**_workorder_properties, 'created_at': _string()},
+        {
+            **_workorder_properties,
+            'created_at': _string(),
+            'request_id': _string(nullable=True),
+        },
         [*_workorder_properties, 'created_at'],
     ),
     'workorder.assigned': _event_schema(

@@ -23,6 +23,12 @@
         "null"
       ]
     },
+    "request_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "status": {
       "type": "string"
     },
