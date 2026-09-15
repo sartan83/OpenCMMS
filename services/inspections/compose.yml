@@ -15,7 +15,7 @@ services:
 
   inspections:
     build:
-      context: .
+      context: ../..
       dockerfile: services/inspections/Dockerfile
     env_file:
       - ../../.env
@@ -40,7 +40,7 @@ services:
 
   inspections-consumer:
     build:
-      context: .
+      context: ../..
       dockerfile: services/inspections/Dockerfile
     env_file:
       - ../../.env
