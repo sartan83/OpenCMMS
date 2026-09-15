@@ -64,7 +64,7 @@ services:
       context: .
       dockerfile: services/identity/Dockerfile
     env_file:
-      - .env.example
+      - .env
     environment:
       IDENTITY_POSTGRES_HOST: identity-db
       JWT_PRIVATE_KEY_PATH: /keys/jwt_private.pem
@@ -89,7 +89,7 @@ services:
       context: .
       dockerfile: services/audit/Dockerfile
     env_file:
-      - .env.example
+      - .env
     environment:
       AUDIT_POSTGRES_HOST: audit-db
       JWKS_URL: http://identity:8000/.well-known/jwks.json
@@ -116,7 +116,7 @@ services:
       context: .
       dockerfile: services/audit/Dockerfile
     env_file:
-      - .env.example
+      - .env
     environment:
       AUDIT_POSTGRES_HOST: audit-db
       EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
@@ -133,11 +133,12 @@ services:
   web:
     build: .
     env_file:
-      - .env.example
+      - .env
     environment:
       JWT_PUBLIC_KEY_PATH: /keys/jwt_public.pem
       JWKS_URL: http://identity:8000/.well-known/jwks.json
       EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      RUN_MIGRATIONS: "1"
     volumes:
       - ./keys:/keys:ro
     depends_on:
@@ -158,7 +159,7 @@ services:
   celery-worker:
     build: .
     env_file:
-      - .env.example
+      - .env
     environment:
       JWT_PUBLIC_KEY_PATH: /keys/jwt_public.pem
       JWKS_URL: http://identity:8000/.well-known/jwks.json
@@ -167,6 +168,8 @@ services:
       - ./keys:/keys:ro
     command: ["celery", "-A", "cmms_project", "worker", "-l", "info"]
     depends_on:
+      web:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:
@@ -179,7 +182,7 @@ services:
   celery-beat:
     build: .
     env_file:
-      - .env.example
+      - .env
     environment:
       JWT_PUBLIC_KEY_PATH: /keys/jwt_public.pem
       JWKS_URL: http://identity:8000/.well-known/jwks.json
@@ -196,6 +199,8 @@ services:
       - --scheduler
       - django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
+      web:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:

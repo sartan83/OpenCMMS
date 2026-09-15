@@ -6,6 +6,7 @@ Computerized Maintenance Management System / Total Productive Maintenance
 from pathlib import Path
 from datetime import timedelta
 import os
+from urllib.parse import unquote, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -16,7 +17,7 @@ from cmms_common.logging import build_logging_config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG = (os.environ.get('DEBUG') or 'True').lower() == 'true'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -26,7 +27,7 @@ if not SECRET_KEY:
     else:
         raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is false')
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = (os.environ.get('ALLOWED_HOSTS') or '*').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,15 +85,30 @@ TEMPLATES = [
 WSGI_APPLICATION = 'cmms_project.wsgi.application'
 
 # Database
-if os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_HOST'):
+database_url = os.environ.get('DATABASE_URL') or None
+if database_url:
+    parsed_database_url = urlparse(database_url)
+    if parsed_database_url.scheme not in {'postgres', 'postgresql'}:
+        raise ImproperlyConfigured('DATABASE_URL must use postgres or postgresql')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('POSTGRES_DB', 'cmms'),
-            'USER': os.environ.get('POSTGRES_USER', 'cmms'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'cmms'),
-            'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
-            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+            'NAME': parsed_database_url.path.lstrip('/'),
+            'USER': unquote(parsed_database_url.username or ''),
+            'PASSWORD': unquote(parsed_database_url.password or ''),
+            'HOST': parsed_database_url.hostname or '',
+            'PORT': str(parsed_database_url.port or 5432),
+        }
+    }
+elif os.environ.get('POSTGRES_HOST'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('POSTGRES_DB') or 'cmms',
+            'USER': os.environ.get('POSTGRES_USER') or 'cmms',
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD') or 'cmms',
+            'HOST': os.environ.get('POSTGRES_HOST') or 'localhost',
+            'PORT': os.environ.get('POSTGRES_PORT') or '5432',
         }
     }
 else:
@@ -176,16 +193,16 @@ if os.environ.get('JWT_PUBLIC_KEY_PATH'):
 # CORS Settings - Allow all origins for development/deployment flexibility
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = os.environ.get(
+CORS_ALLOWED_ORIGINS = (os.environ.get(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080,'
     'http://127.0.0.1:8080,http://localhost:8000,http://127.0.0.1:8000',
-).split(',')
+) or '').split(',')
 
 # Celery Configuration
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
+REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or REDIS_URL
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND') or REDIS_URL
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -193,11 +210,16 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # Shared service settings
-AUDIT_LOCAL_WRITE = os.environ.get('AUDIT_LOCAL_WRITE', 'True').lower() == 'true'
-EVENT_BUS_URL = os.environ.get('EVENT_BUS_URL')
-JWKS_URL = os.environ.get('JWKS_URL')
-SERVICE_NAME = os.environ.get('SERVICE_NAME', 'monolith')
+AUDIT_LOCAL_WRITE = (os.environ.get('AUDIT_LOCAL_WRITE') or 'True').lower() == 'true'
+EVENT_BUS_URL = os.environ.get('EVENT_BUS_URL') or None
+JWKS_URL = os.environ.get('JWKS_URL') or None
+SERVICE_NAME = os.environ.get('SERVICE_NAME') or 'monolith'
 
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 # Logging
 LOGGING = build_logging_config(os.environ.get('LOG_FORMAT', '').lower() == 'json')
 

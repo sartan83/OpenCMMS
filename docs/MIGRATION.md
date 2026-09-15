@@ -6,6 +6,7 @@ Run the application stack locally with Docker Compose:
 
 ```bash
 cp .env.example .env
+# Set SECRET_KEY in .env before starting
 docker compose up --build
 ```
 

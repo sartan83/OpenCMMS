@@ -93,6 +93,7 @@ python manage.py runserver 0.0.0.0:8000
 
 ```bash
 cp .env.example .env
+# Set SECRET_KEY in .env before starting
 docker compose up --build
 ```
 
