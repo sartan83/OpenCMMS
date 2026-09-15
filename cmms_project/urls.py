@@ -9,6 +9,8 @@ from django.conf.urls.static import static
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect
 
+from .health import health
+
 
 def root_view(request):
     """根路径跳转到登录页面"""
@@ -25,6 +27,7 @@ def root_view(request):
 
 urlpatterns = [
     path('', root_view, name='root'),
+    path('health/', health, name='health'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('users.urls')),
     path('api/assets/', include('assets.urls')),
