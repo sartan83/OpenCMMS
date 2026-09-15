@@ -125,6 +125,39 @@ def test_each_handler_is_idempotent(event_factory, model):
     assert ProcessedEvent.objects.count() == 1
 
 
+@pytest.mark.django_db
+def test_workorder_lifecycle_events_do_not_regress_status():
+    HANDLERS['workorder.created'](event(
+        'workorder.created',
+        workorder_payload(
+            status='open',
+            created_at='2025-01-15T09:00:00+00:00',
+        ),
+        'wo-created-ordering',
+    ))
+    HANDLERS['workorder.completed'](event(
+        'workorder.completed',
+        workorder_payload(
+            status='completed',
+            completed_at='2025-01-15T10:30:00+00:00',
+        ),
+        'wo-completed-ordering',
+    ))
+    HANDLERS['workorder.assigned'](event(
+        'workorder.assigned',
+        workorder_payload(
+            status='assigned',
+            assigned_at='2025-01-15T09:15:00+00:00',
+        ),
+        'wo-assigned-ordering',
+    ))
+
+    fact = WorkOrderFact.objects.get(work_order_id=5)
+    assert fact.status == 'completed'
+    assert fact.completed_at.isoformat() == '2025-01-15T10:30:00+00:00'
+    assert fact.assigned_at.isoformat() == '2025-01-15T09:15:00+00:00'
+
+
 @pytest.fixture
 def signed_client(monkeypatch):
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)

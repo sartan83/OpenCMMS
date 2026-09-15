@@ -13,6 +13,13 @@ from .models import (
     WorkOrderFact,
 )
 
+LIFECYCLE_RANKS = {
+    'workorder.created': 0,
+    'workorder.assigned': 1,
+    'workorder.completed': 2,
+    'workorder.closed': 3,
+}
+
 
 def _event(value):
     return Event.from_dict(value) if isinstance(value, dict) else value
@@ -88,6 +95,14 @@ def _workorder_defaults(payload, event):
     return defaults
 
 
+def _current_lifecycle_rank(fact):
+    for event_type, rank in reversed(LIFECYCLE_RANKS.items()):
+        field = event_type.rsplit('.', 1)[1] + '_at'
+        if getattr(fact, field):
+            return rank
+    return -1
+
+
 def handle_workorder_event(event):
     event = _event(event)
     with transaction.atomic():
@@ -95,7 +110,12 @@ def handle_workorder_event(event):
         if event is None:
             return False
         payload = event.payload
+        existing = WorkOrderFact.objects.filter(
+            work_order_id=payload['work_order_id']
+        ).first()
         defaults = _workorder_defaults(payload, event)
+        if existing and _current_lifecycle_rank(existing) > LIFECYCLE_RANKS[event.type]:
+            defaults.pop('status', None)
         timestamp_field = {
             'workorder.created': 'created_at',
             'workorder.assigned': 'assigned_at',
