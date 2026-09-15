@@ -24,7 +24,9 @@ services:
   web:
     build: .
     env_file:
-      - .env.example
+      - .env
+    environment:
+      RUN_MIGRATIONS: "1"
     depends_on:
       db:
         condition: service_healthy
@@ -39,9 +41,11 @@ services:
   celery-worker:
     build: .
     env_file:
-      - .env.example
+      - .env
     command: ["celery", "-A", "cmms_project", "worker", "-l", "info"]
     depends_on:
+      web:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:
@@ -50,7 +54,7 @@ services:
   celery-beat:
     build: .
     env_file:
-      - .env.example
+      - .env
     command:
       - celery
       - -A
@@ -61,6 +65,8 @@ services:
       - --scheduler
       - django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
+      web:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:

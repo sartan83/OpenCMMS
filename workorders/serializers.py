@@ -31,6 +31,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
                   'attachments', 'notes', 'created_at', 'updated_at',
                   'is_overdue', 'duration_hours']
         read_only_fields = ['id', 'requested_by', 'created_at', 'updated_at', 'is_overdue', 'duration_hours']
+        extra_kwargs = {'wo_code': {'required': False}}
 
 
 class WorkOrderListSerializer(serializers.ModelSerializer):
