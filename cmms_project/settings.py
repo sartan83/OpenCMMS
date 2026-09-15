@@ -157,7 +157,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        (
+            'cmms_project.authentication.LocalUserJWKSAuthentication',
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+        )
+        if os.environ.get('JWKS_URL')
+        else ('rest_framework_simplejwt.authentication.JWTAuthentication',)
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',

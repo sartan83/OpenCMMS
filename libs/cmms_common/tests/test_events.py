@@ -1,3 +1,8 @@
+import json
+from datetime import date
+from decimal import Decimal
+from uuid import uuid4
+
 import pytest
 
 from cmms_common.events.bus import Event, InMemoryEventBus
@@ -29,3 +34,24 @@ def test_schema_validation_rejects_invalid_payload():
     event = Event('asset.created', payload={'asset_id': 'not-an-int'}, source='test')
     with pytest.raises(Exception):
         validate(event)
+
+
+def test_in_memory_bus_json_encodes_common_django_types():
+    bus = InMemoryEventBus()
+    event = Event(
+        'test.event',
+        payload={
+            'amount': Decimal('1.50'),
+            'today': date.today(),
+            'identifier': uuid4(),
+        },
+        source='test',
+    )
+
+    assert bus.publish(event) is True
+    payload = bus.published[0].to_dict()['payload']
+
+    assert json.dumps(payload)
+    assert payload['amount'] == '1.50'
+    assert payload['today'] == date.today().isoformat()
+    assert isinstance(payload['identifier'], str)

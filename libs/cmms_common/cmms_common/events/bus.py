@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import uuid
@@ -8,6 +9,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable
 
+from django.core.serializers.json import DjangoJSONEncoder
 from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.entity import binding
 
@@ -31,7 +33,7 @@ class Event:
     correlation_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return json.loads(json.dumps(asdict(self), cls=DjangoJSONEncoder))
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> Event:
@@ -55,7 +57,7 @@ class EventBus(ABC):
     @staticmethod
     def _validate(event: Event) -> bool:
         try:
-            validate(event)
+            validate(Event.from_dict(event.to_dict()))
         except Exception:
             logger.exception('Event validation failed for %s', event.type)
             return False
@@ -70,6 +72,11 @@ class RabbitMQEventBus(EventBus):
         self.exchange = Exchange(self.exchange_name, type='topic', durable=True)
 
     def publish(self, event: Event) -> bool:
+        try:
+            event = Event.from_dict(event.to_dict())
+        except Exception:
+            logger.exception('Failed to encode event %s', event.type)
+            return False
         if not self._validate(event):
             return False
         try:
@@ -125,6 +132,11 @@ class InMemoryEventBus(EventBus):
         self._subscribers: list[tuple[list[str], Callable[[Event], None], str]] = []
 
     def publish(self, event: Event) -> bool:
+        try:
+            event = Event.from_dict(event.to_dict())
+        except Exception:
+            logger.exception('Failed to encode event %s', event.type)
+            return False
         if not self._validate(event):
             return False
         self.published.append(event)
