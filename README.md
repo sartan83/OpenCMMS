@@ -89,6 +89,15 @@ python manage.py runserver 0.0.0.0:8000
 - **API文档**: http://10.215.73.161:8000/api
 - **本机访问**: http://127.0.0.1:8000 (仅本机可访问)
 
+### Run with Docker
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+访问 http://localhost/ 查看应用，或访问 http://localhost/health/ 检查服务状态。
+
 ### 默认账户
 
 | 角色 | 用户名 | 密码 | 权限 |
