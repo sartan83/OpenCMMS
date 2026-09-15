@@ -1,1 +1,62 @@
-services: {}
+services:
+  reports-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${REPORTS_POSTGRES_DB:-reports}
+      POSTGRES_USER: ${REPORTS_POSTGRES_USER:-reports}
+      POSTGRES_PASSWORD: ${REPORTS_POSTGRES_PASSWORD:-reports}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - reports_pgdata:/var/lib/postgresql/data
+
+  reports:
+    build:
+      context: ../..
+      dockerfile: services/reports/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      REPORTS_POSTGRES_HOST: reports-db
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: reports
+      RUN_MIGRATIONS: "1"
+    command: ["sh", "-c", "python services/reports/manage.py migrate --noinput && exec gunicorn --chdir /app/services/reports reports_service.wsgi:application --bind 0.0.0.0:8000"]
+    depends_on:
+      reports-db:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  reports-consumer:
+    build:
+      context: ../..
+      dockerfile: services/reports/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      REPORTS_POSTGRES_HOST: reports-db
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: reports
+    command: ["python", "services/reports/manage.py", "consume_events"]
+    depends_on:
+      reports:
+        condition: service_healthy
+      reports-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  reports_pgdata:
