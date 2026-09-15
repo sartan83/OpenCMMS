@@ -27,11 +27,12 @@ class PartTransactionSerializer(serializers.ModelSerializer):
     """Serializer for PartTransaction model"""
     part_code = serializers.CharField(source='part.part_code', read_only=True)
     part_name = serializers.CharField(source='part.name', read_only=True)
-    created_by_name = serializers.CharField(source='created_by.full_name', read_only=True)
+    operator_name = serializers.CharField(source='operator.full_name', read_only=True)
     
     class Meta:
         model = PartTransaction
         fields = ['id', 'part', 'part_code', 'part_name',
-                  'transaction_type', 'quantity', 'unit_cost', 'total_cost',
-                  'reference', 'notes', 'created_by', 'created_by_name', 'created_at']
+                  'transaction_type', 'quantity', 'stock_before', 'stock_after',
+                  'related_work_order', 'reference', 'operator', 'operator_name',
+                  'remark', 'created_at']
         read_only_fields = ['id', 'created_at']

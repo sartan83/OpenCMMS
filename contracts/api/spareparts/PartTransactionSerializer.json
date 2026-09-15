@@ -1,0 +1,25 @@
+{
+  "fields": [
+    "id",
+    "part",
+    "part_code",
+    "part_name",
+    "transaction_type",
+    "quantity",
+    "stock_before",
+    "stock_after",
+    "related_work_order",
+    "reference",
+    "operator",
+    "operator_name",
+    "remark",
+    "created_at"
+  ],
+  "read_only_fields": [
+    "id",
+    "part_code",
+    "part_name",
+    "operator_name",
+    "created_at"
+  ]
+}

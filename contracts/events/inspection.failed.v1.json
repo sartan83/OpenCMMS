@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset_id": {
+      "type": "integer"
+    },
+    "failed_items": {
+      "type": "array"
+    },
+    "inspection_record_id": {
+      "type": "integer"
+    },
+    "inspector_id": {
+      "type": "integer"
+    },
+    "work_order_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "inspection_record_id",
+    "asset_id",
+    "work_order_id",
+    "failed_items",
+    "inspector_id"
+  ],
+  "type": "object"
+}

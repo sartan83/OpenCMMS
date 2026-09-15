@@ -6,3 +6,6 @@ logs/
 staticfiles/
 .env
 tmpclaude-*
+keys/
+.pytest_cache/
+*.egg-info/

@@ -3,9 +3,11 @@ Celery configuration for CMMS project.
 """
 import os
 from celery import Celery
+from cmms_common.telemetry import configure_telemetry
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cmms_project.settings')
+configure_telemetry('monolith')
 
 app = Celery('cmms_project')
 

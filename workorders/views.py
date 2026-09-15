@@ -15,6 +15,7 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 
+from cmms_common.audit import audit_log
 from .models import WorkOrder, WorkOrderComment, WorkOrderPart, WorkOrderStatus, WorkOrderType
 from .serializers import (WorkOrderSerializer, WorkOrderListSerializer,
                           WorkOrderCommentSerializer, WorkOrderPartSerializer,
@@ -90,9 +91,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
             work_order.status = WorkOrderStatus.ASSIGNED
             work_order.save()
 
-            # Log audit
-            from users.models import AuditLog
-            AuditLog.log(
+            audit_log(
                 actor=request.user,
                 action='assign',
                 entity_type='WorkOrder',
@@ -119,9 +118,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
         work_order.actual_start = timezone.now()
         work_order.save()
 
-        # Log audit
-        from users.models import AuditLog
-        AuditLog.log(
+        audit_log(
             actor=request.user,
             action='update',
             entity_type='WorkOrder',
@@ -173,9 +170,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
         work_order.completed_at = timezone.now()
         work_order.save()
 
-        # Log audit
-        from users.models import AuditLog
-        AuditLog.log(
+        audit_log(
             actor=request.user,
             action='complete',
             entity_type='WorkOrder',
@@ -201,9 +196,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
         work_order.closed_at = timezone.now()
         work_order.save()
 
-        # Log audit
-        from users.models import AuditLog
-        AuditLog.log(
+        audit_log(
             actor=request.user,
             action='close',
             entity_type='WorkOrder',

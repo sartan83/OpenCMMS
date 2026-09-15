@@ -1,0 +1,41 @@
+{
+  "fields": [
+    "id",
+    "code",
+    "equipment",
+    "equipment_code",
+    "equipment_name",
+    "title",
+    "description",
+    "trigger_type",
+    "trigger_type_display",
+    "frequency_value",
+    "frequency_unit",
+    "frequency_unit_display",
+    "counter_name",
+    "counter_threshold",
+    "checklist_template",
+    "estimated_hours",
+    "estimated_cost",
+    "required_skills",
+    "priority",
+    "is_active",
+    "last_generated_date",
+    "last_counter_value",
+    "created_by",
+    "created_by_name",
+    "created_at",
+    "updated_at"
+  ],
+  "read_only_fields": [
+    "id",
+    "equipment_code",
+    "equipment_name",
+    "trigger_type_display",
+    "frequency_unit_display",
+    "created_by",
+    "created_by_name",
+    "created_at",
+    "updated_at"
+  ]
+}

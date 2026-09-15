@@ -1,0 +1,22 @@
+{
+  "fields": [
+    "id",
+    "code",
+    "name",
+    "factory",
+    "workshop",
+    "line",
+    "station",
+    "status",
+    "status_display",
+    "criticality",
+    "location_display",
+    "is_overdue"
+  ],
+  "read_only_fields": [
+    "id",
+    "status_display",
+    "location_display",
+    "is_overdue"
+  ]
+}

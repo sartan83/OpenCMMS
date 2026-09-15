@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "type": "string"
+    },
+    "actor_id": {
+      "type": "integer"
+    },
+    "actor_username": {
+      "type": "string"
+    },
+    "diff": {
+      "type": "object"
+    },
+    "entity_id": {
+      "type": "integer"
+    },
+    "entity_repr": {
+      "type": "string"
+    },
+    "entity_type": {
+      "type": "string"
+    },
+    "ip_address": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "service": {
+      "type": "string"
+    },
+    "user_agent": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "actor_id",
+    "actor_username",
+    "action",
+    "entity_type",
+    "entity_id",
+    "entity_repr",
+    "diff",
+    "ip_address",
+    "user_agent",
+    "service"
+  ],
+  "type": "object"
+}

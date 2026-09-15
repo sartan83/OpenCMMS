@@ -1,0 +1,22 @@
+{
+  "fields": [
+    "id",
+    "code",
+    "equipment_code",
+    "equipment_name",
+    "title",
+    "trigger_type",
+    "trigger_type_display",
+    "frequency_display",
+    "priority",
+    "is_active",
+    "last_generated_date"
+  ],
+  "read_only_fields": [
+    "id",
+    "equipment_code",
+    "equipment_name",
+    "trigger_type_display",
+    "frequency_display"
+  ]
+}

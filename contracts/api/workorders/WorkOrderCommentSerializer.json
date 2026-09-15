@@ -1,0 +1,16 @@
+{
+  "fields": [
+    "id",
+    "work_order",
+    "author",
+    "author_name",
+    "comment",
+    "is_internal",
+    "created_at"
+  ],
+  "read_only_fields": [
+    "id",
+    "author_name",
+    "created_at"
+  ]
+}

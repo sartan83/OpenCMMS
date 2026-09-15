@@ -28,6 +28,7 @@ def root_view(request):
 urlpatterns = [
     path('', root_view, name='root'),
     path('health/', health, name='health'),
+    path('', include('django_prometheus.urls')),
     path('admin/', admin.site.urls),
     path('api/auth/', include('users.urls')),
     path('api/assets/', include('assets.urls')),

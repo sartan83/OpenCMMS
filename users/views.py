@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.contrib.auth import get_user_model
 
+from cmms_common.audit import audit_log
+from cmms_common.events.bus import Event, get_event_bus
 from .models import User, AuditLog, Role
 from .serializers import UserSerializer, UserRegistrationSerializer, CustomTokenObtainPairSerializer, AuditLogSerializer
 
@@ -49,7 +51,7 @@ class UserViewSet(viewsets.ModelViewSet):
             user = serializer.save()
 
             # Log the registration
-            AuditLog.log(
+            audit_log(
                 actor=user,
                 action='create',
                 entity_type='User',
@@ -58,6 +60,16 @@ class UserViewSet(viewsets.ModelViewSet):
                 ip_address=self.get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', '')
             )
+            get_event_bus().publish(Event(
+                type='user.created',
+                payload={
+                    'user_id': user.id,
+                    'username': user.username,
+                    'role': user.role,
+                    'full_name': user.full_name or user.username,
+                },
+                source='identity',
+            ))
 
             return Response(
                 UserSerializer(user).data,

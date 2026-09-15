@@ -1,0 +1,10 @@
+Django>=5.0.0
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.3.0
+django-cors-headers>=4.0.0
+psycopg[binary]>=3.1
+gunicorn>=21
+cryptography>=41
+PyJWT>=2.8
+django-prometheus>=2.3
+-e ./libs/cmms_common[otel]

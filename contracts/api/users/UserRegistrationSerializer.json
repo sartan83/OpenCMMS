@@ -1,0 +1,13 @@
+{
+  "fields": [
+    "username",
+    "password",
+    "password_confirm",
+    "email",
+    "full_name",
+    "role",
+    "phone",
+    "department"
+  ],
+  "read_only_fields": []
+}

@@ -10,6 +10,9 @@ from urllib.parse import unquote, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 
+from cmms_common.auth.keys import load_private_key, load_public_key
+from cmms_common.logging import build_logging_config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_celery_beat',
+    'django_prometheus',
     # Local apps
     'assets',
     'maintenance',
@@ -50,6 +54,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -59,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'cmms_project.urls'
@@ -151,7 +157,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        (
+            'cmms_project.authentication.LocalUserJWKSAuthentication',
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+        )
+        if os.environ.get('JWKS_URL')
+        else ('rest_framework_simplejwt.authentication.JWTAuthentication',)
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -180,6 +191,12 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
+if os.environ.get('JWT_PUBLIC_KEY_PATH'):
+    SIMPLE_JWT.update({
+        'ALGORITHM': 'RS256',
+        'VERIFYING_KEY': load_public_key(),
+        'SIGNING_KEY': load_private_key() if os.environ.get('JWT_PRIVATE_KEY_PATH') else None,
+    })
 
 # CORS Settings - Allow all origins for development/deployment flexibility
 CORS_ALLOW_ALL_ORIGINS = DEBUG
@@ -200,45 +217,19 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
+# Shared service settings
+AUDIT_LOCAL_WRITE = (os.environ.get('AUDIT_LOCAL_WRITE') or 'True').lower() == 'true'
+EVENT_BUS_URL = os.environ.get('EVENT_BUS_URL') or None
+JWKS_URL = os.environ.get('JWKS_URL') or None
+SERVICE_NAME = os.environ.get('SERVICE_NAME') or 'monolith'
+
 STORAGES = {
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
-
 # Logging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-        'json': {
-            'class': 'pythonjsonlogger.json.JsonFormatter',
-            'format': '%(levelname)s %(asctime)s %(name)s %(message)s',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stdout',
-            'formatter': 'json' if os.environ.get('LOG_FORMAT', '').lower() == 'json' else 'verbose',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'cmms': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-    },
-}
+LOGGING = build_logging_config(os.environ.get('LOG_FORMAT', '').lower() == 'json')
 
 # CMMS Specific Settings
 CMMS_SETTINGS = {
