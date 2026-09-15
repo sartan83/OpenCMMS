@@ -1,1 +1,61 @@
-services: {}
+services:
+  inspections-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${INSPECTIONS_POSTGRES_DB:-inspections}
+      POSTGRES_USER: ${INSPECTIONS_POSTGRES_USER:-inspections}
+      POSTGRES_PASSWORD: ${INSPECTIONS_POSTGRES_PASSWORD:-inspections}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - inspections_db_data:/var/lib/postgresql/data
+
+  inspections:
+    build:
+      context: .
+      dockerfile: services/inspections/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      INSPECTIONS_POSTGRES_HOST: inspections-db
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: inspections
+    command: ["sh", "-c", "python services/inspections/manage.py migrate --noinput && exec gunicorn --chdir /app/services/inspections inspections_service.wsgi:application --bind 0.0.0.0:8000"]
+    depends_on:
+      inspections-db:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  inspections-consumer:
+    build:
+      context: .
+      dockerfile: services/inspections/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      INSPECTIONS_POSTGRES_HOST: inspections-db
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: inspections
+    command: ["python", "services/inspections/manage.py", "consume_events"]
+    depends_on:
+      inspections:
+        condition: service_healthy
+      inspections-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  inspections_db_data:

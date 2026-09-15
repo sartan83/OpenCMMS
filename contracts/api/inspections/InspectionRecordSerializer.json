@@ -1,0 +1,28 @@
+{
+  "fields": [
+    "id",
+    "equipment",
+    "equipment_code",
+    "equipment_name",
+    "route",
+    "items",
+    "inspector",
+    "inspector_name",
+    "result",
+    "triggered_work_order",
+    "work_order_request_id",
+    "notes",
+    "created_at"
+  ],
+  "read_only_fields": [
+    "id",
+    "equipment_code",
+    "equipment_name",
+    "inspector",
+    "inspector_name",
+    "result",
+    "triggered_work_order",
+    "work_order_request_id",
+    "created_at"
+  ]
+}

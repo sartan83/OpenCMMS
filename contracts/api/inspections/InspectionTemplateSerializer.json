@@ -1,0 +1,19 @@
+{
+  "fields": [
+    "id",
+    "code",
+    "name",
+    "description",
+    "items_template",
+    "equipment_type",
+    "frequency_days",
+    "is_active",
+    "created_at",
+    "updated_at"
+  ],
+  "read_only_fields": [
+    "id",
+    "created_at",
+    "updated_at"
+  ]
+}
