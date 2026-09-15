@@ -99,6 +99,8 @@ docker compose up --build
 
 访问 http://localhost/ 查看应用，或访问 http://localhost/health/ 检查服务状态。
 
+按域名进行网关迁移时，请参阅 [`docs/CUTOVER.md`](docs/CUTOVER.md)。
+
 ### 默认账户
 
 | 角色 | 用户名 | 密码 | 权限 |

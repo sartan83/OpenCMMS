@@ -229,8 +229,17 @@ services:
         condition: service_healthy
     ports:
       - "80:80"
+    environment:
+      NGINX_ENVSUBST_FILTER: '^[A-Z]+_UPSTREAM$$'
+      ASSETS_UPSTREAM: ${ASSETS_UPSTREAM:-web:8000}
+      MAINTENANCE_UPSTREAM: ${MAINTENANCE_UPSTREAM:-web:8000}
+      WORKORDERS_UPSTREAM: ${WORKORDERS_UPSTREAM:-web:8000}
+      INSPECTIONS_UPSTREAM: ${INSPECTIONS_UPSTREAM:-web:8000}
+      SPAREPARTS_UPSTREAM: ${SPAREPARTS_UPSTREAM:-web:8000}
+      REPORTS_UPSTREAM: ${REPORTS_UPSTREAM:-web:8000}
     volumes:
       - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/templates:/etc/nginx/templates:ro
 
   jaeger:
     image: jaegertracing/all-in-one:1.60
