@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: web
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["web:8000"]
+  - job_name: identity
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["identity:8000"]
+  - job_name: audit
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["audit:8000"]

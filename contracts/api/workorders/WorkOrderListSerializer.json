@@ -1,0 +1,29 @@
+{
+  "fields": [
+    "id",
+    "wo_code",
+    "equipment",
+    "equipment_code",
+    "equipment_name",
+    "wo_type",
+    "wo_type_display",
+    "status",
+    "status_display",
+    "priority",
+    "priority_display",
+    "summary",
+    "assignee_name",
+    "planned_end",
+    "created_at"
+  ],
+  "read_only_fields": [
+    "id",
+    "equipment_code",
+    "equipment_name",
+    "wo_type_display",
+    "status_display",
+    "priority_display",
+    "assignee_name",
+    "created_at"
+  ]
+}

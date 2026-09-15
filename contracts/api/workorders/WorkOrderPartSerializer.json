@@ -1,0 +1,16 @@
+{
+  "fields": [
+    "id",
+    "work_order",
+    "part_code",
+    "part_name",
+    "quantity",
+    "unit",
+    "unit_cost",
+    "total_cost"
+  ],
+  "read_only_fields": [
+    "id",
+    "total_cost"
+  ]
+}

@@ -6,4 +6,5 @@ psycopg[binary]>=3.1
 gunicorn>=21
 cryptography>=41
 PyJWT>=2.8
--e ./libs/cmms_common
+django-prometheus>=2.3
+-e ./libs/cmms_common[otel]

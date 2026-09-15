@@ -54,6 +54,26 @@ docker compose up --build
 
 ## Phase 2: Shared contracts and data ownership
 
+Phase 2 provides shared scaffolding for five parallel extraction tracks:
+
+- Track A: assets
+- Track B: maintenance
+- Track C: work orders
+- Track D: inspections
+- Track E: spare parts and reports
+
+Each track owns only `services/<name>/`, its domain event contracts under
+`contracts/events/*<domain>*`, `docs/services/<name>.md`, and append-only
+additions to `docs/EVENTS.md`. Shared files should not be edited by tracks.
+Service Compose definitions start as isolated stubs and are filled in by the
+owning track.
+
+The shared library now provides optional OpenTelemetry tracing, Prometheus
+metrics, and frozen API serializer contracts. See
+[`SERVICE_TEMPLATE.md`](SERVICE_TEMPLATE.md) for the service layout,
+`SOURCE_DATABASE_URL` import alias, event consumers, and contract-test
+conventions.
+
 ## Phase 3: Service extraction
 
 ## Phase 4: Gateway cutover

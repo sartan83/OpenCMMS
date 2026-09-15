@@ -1,0 +1,24 @@
+{
+  "fields": [
+    "id",
+    "actor",
+    "actor_name",
+    "actor_username",
+    "action",
+    "action_display",
+    "entity_type",
+    "entity_id",
+    "entity_repr",
+    "diff",
+    "ip_address",
+    "user_agent",
+    "created_at"
+  ],
+  "read_only_fields": [
+    "id",
+    "actor_name",
+    "actor_username",
+    "action_display",
+    "created_at"
+  ]
+}

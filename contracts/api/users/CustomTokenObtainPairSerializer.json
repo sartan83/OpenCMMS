@@ -1,0 +1,7 @@
+{
+  "fields": [
+    "username",
+    "password"
+  ],
+  "read_only_fields": []
+}

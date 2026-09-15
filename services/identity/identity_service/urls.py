@@ -19,4 +19,5 @@ urlpatterns = [
     path('api/auth/', include((user_urlpatterns, 'users'))),
     path('.well-known/jwks.json', jwks_view, name='jwks'),
     path('health/', health_view, name='health'),
+    path('', include('django_prometheus.urls')),
 ]

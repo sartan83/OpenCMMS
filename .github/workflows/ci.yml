@@ -46,10 +46,14 @@ jobs:
       - run: cp .env.example .env
       - run: docker compose config -q
       - run: docker build -t opencmms:ci .
-      - run: docker build -t opencmms-identity:ci -f services/identity/Dockerfile .
-      - run: docker build -t opencmms-audit:ci -f services/audit/Dockerfile .
+      - name: Build service images
+        run: |
+          for f in services/*/Dockerfile; do
+            name=$(basename "$(dirname "$f")")
+            docker build -f "$f" -t "opencmms-${name}:ci" .
+          done
 
-  identity-tests:
+  service-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,5 +62,11 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: pip install -r requirements.txt
-      - run: pytest -q
-        working-directory: services/identity
+      - name: Run discovered service tests
+        run: |
+          for d in services/*/; do
+            if [ -f "$d/pytest.ini" ]; then
+              echo "== $d"
+              (cd "$d" && pytest -q) || exit 1
+            fi
+          done

@@ -6,6 +6,7 @@ import sys
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from django.core.exceptions import ImproperlyConfigured
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,9 +15,14 @@ sys.path.insert(0, str(REPO_ROOT))
 from cmms_common.auth.keys import load_private_key, load_public_key
 from cmms_common.logging import build_logging_config
 
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-identity-dev-key')
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+DEBUG = (os.environ.get('DEBUG') or 'True').lower() == 'true'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-identity-dev-key'
+    else:
+        raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is false')
+ALLOWED_HOSTS = (os.environ.get('ALLOWED_HOSTS') or '*').split(',')
 
 private_pem = load_private_key()
 public_pem = load_public_key()
@@ -42,7 +48,7 @@ elif public_pem is None:
         serialization.PublicFormat.SubjectPublicKeyInfo,
     )
 
-JWT_KID = os.environ.get('JWT_KID', 'cmms-identity-1')
+JWT_KID = os.environ.get('JWT_KID') or 'cmms-identity-1'
 JWT_PUBLIC_KEY = public_pem
 JWT_PRIVATE_KEY = private_pem
 
@@ -56,9 +62,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'django_prometheus',
     'users',
 ]
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -66,6 +74,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 ROOT_URLCONF = 'identity_service.urls'
 TEMPLATES = [{
@@ -83,11 +92,11 @@ WSGI_APPLICATION = 'identity_service.wsgi.application'
 if os.environ.get('IDENTITY_POSTGRES_HOST'):
     DATABASES = {'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('IDENTITY_POSTGRES_DB', 'identity'),
-        'USER': os.environ.get('IDENTITY_POSTGRES_USER', 'identity'),
-        'PASSWORD': os.environ.get('IDENTITY_POSTGRES_PASSWORD', 'identity'),
-        'HOST': os.environ.get('IDENTITY_POSTGRES_HOST', 'localhost'),
-        'PORT': os.environ.get('IDENTITY_POSTGRES_PORT', '5432'),
+        'NAME': os.environ.get('IDENTITY_POSTGRES_DB') or 'identity',
+        'USER': os.environ.get('IDENTITY_POSTGRES_USER') or 'identity',
+        'PASSWORD': os.environ.get('IDENTITY_POSTGRES_PASSWORD') or 'identity',
+        'HOST': os.environ.get('IDENTITY_POSTGRES_HOST') or 'localhost',
+        'PORT': os.environ.get('IDENTITY_POSTGRES_PORT') or '5432',
     }}
 else:
     DATABASES = {'default': {
@@ -123,6 +132,6 @@ SIMPLE_JWT = {
 }
 SERVICE_NAME = 'identity'
 AUDIT_LOCAL_WRITE = True
-EVENT_BUS_URL = os.environ.get('EVENT_BUS_URL')
-JWKS_URL = os.environ.get('JWKS_URL', 'http://identity/.well-known/jwks.json')
-LOGGING = build_logging_config(os.environ.get('LOG_FORMAT', '').lower() == 'json')
+EVENT_BUS_URL = os.environ.get('EVENT_BUS_URL') or None
+JWKS_URL = os.environ.get('JWKS_URL') or 'http://identity/.well-known/jwks.json'
+LOGGING = build_logging_config((os.environ.get('LOG_FORMAT') or '').lower() == 'json')

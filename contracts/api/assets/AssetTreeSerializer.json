@@ -1,0 +1,15 @@
+{
+  "fields": [
+    "id",
+    "code",
+    "name",
+    "status",
+    "status_display",
+    "children"
+  ],
+  "read_only_fields": [
+    "id",
+    "status_display",
+    "children"
+  ]
+}

@@ -21,4 +21,5 @@ PyInstaller>=6.0.0
 django-celery-beat>=2.5.0
 jsonschema>=4.0
 cryptography>=41
--e ./libs/cmms_common
+django-prometheus>=2.3
+-e ./libs/cmms_common[otel]
