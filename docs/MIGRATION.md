@@ -76,4 +76,10 @@ conventions.
 
 ## Phase 3: Service extraction
 
+Phase 3 adds the Reporting service as the CQRS read side. It consumes asset,
+work-order, spare-parts, and inspection events into deduplicated projections,
+serves the reporting API, and imports legacy reporting data through the
+`monolith` database alias. See [`services/reports`](services/reports.md) for
+the event-to-table mapping, endpoints, and configuration.
+
 ## Phase 4: Gateway cutover
