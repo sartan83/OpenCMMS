@@ -77,3 +77,8 @@ conventions.
 ## Phase 3: Service extraction
 
 ## Phase 4: Gateway cutover
+
+Phase 4 adds an environment-driven strangler switch to the gateway so assets,
+spare parts, maintenance, work orders, inspections, and reports can be
+cut over independently. Follow the ordered import, health, smoke-check, and
+rollback procedures in [`CUTOVER.md`](CUTOVER.md).
