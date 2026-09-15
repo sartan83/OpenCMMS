@@ -1,1 +1,62 @@
-services: {}
+services:
+  workorders-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${WORKORDERS_POSTGRES_DB:-workorders}
+      POSTGRES_USER: ${WORKORDERS_POSTGRES_USER:-workorders}
+      POSTGRES_PASSWORD: ${WORKORDERS_POSTGRES_PASSWORD:-workorders}
+    volumes:
+      - workorders_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${WORKORDERS_POSTGRES_USER:-workorders} -d ${WORKORDERS_POSTGRES_DB:-workorders}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  workorders:
+    build:
+      context: ../..
+      dockerfile: services/workorders/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      WORKORDERS_POSTGRES_HOST: workorders-db
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: workorders
+    command: ["sh", "-c", "python services/workorders/manage.py migrate --noinput && exec gunicorn --chdir /app/services/workorders workorders_service.wsgi:application --bind 0.0.0.0:8000"]
+    depends_on:
+      workorders-db:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  workorders-consumer:
+    build:
+      context: ../..
+      dockerfile: services/workorders/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      WORKORDERS_POSTGRES_HOST: workorders-db
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: workorders
+    command: ["python", "services/workorders/manage.py", "consume_events"]
+    depends_on:
+      workorders:
+        condition: service_healthy
+      workorders-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  workorders_pgdata:
