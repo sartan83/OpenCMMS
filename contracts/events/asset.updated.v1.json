@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset_id": {
+      "type": "integer"
+    },
+    "code": {
+      "type": "string"
+    },
+    "factory": {
+      "type": "string"
+    },
+    "line": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "process": {
+      "type": "string"
+    },
+    "station": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "workshop": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "asset_id",
+    "code",
+    "name",
+    "status",
+    "process",
+    "factory",
+    "workshop",
+    "line",
+    "station"
+  ],
+  "type": "object"
+}

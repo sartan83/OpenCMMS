@@ -1,14 +1,3 @@
-from django.db import connection
-from django.http import JsonResponse
+from cmms_common.health import health_view
 
-
-def health(request):
-    try:
-        connection.ensure_connection()
-    except Exception:
-        return JsonResponse(
-            {'status': 'error', 'database': 'error'},
-            status=503,
-        )
-
-    return JsonResponse({'status': 'ok', 'database': 'ok'})
+health = health_view

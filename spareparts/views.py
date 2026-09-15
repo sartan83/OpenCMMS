@@ -9,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db import models
 
+from cmms_common.audit import audit_log
 from .models import SparePart, PartTransaction
 from .serializers import SparePartSerializer, PartTransactionSerializer
 
@@ -51,7 +52,7 @@ class SparePartViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Update stock
+        stock_before = spare_part.current_stock
         spare_part.current_stock += quantity
         spare_part.save()
         
@@ -60,9 +61,19 @@ class SparePartViewSet(viewsets.ModelViewSet):
             part=spare_part,
             transaction_type='in',
             quantity=quantity,
+            stock_before=stock_before,
+            stock_after=spare_part.current_stock,
             reference=request.data.get('reference', ''),
-            notes=request.data.get('notes', ''),
-            created_by=request.user
+            remark=request.data.get('notes', ''),
+            operator=request.user,
+        )
+        audit_log(
+            actor=request.user,
+            action='stock_in',
+            entity_type='SparePart',
+            entity_id=spare_part.id,
+            entity_repr=str(spare_part),
+            diff={'quantity': quantity, 'stock_before': stock_before, 'stock_after': spare_part.current_stock},
         )
         
         return Response(SparePartSerializer(spare_part).data)
@@ -85,7 +96,7 @@ class SparePartViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Update stock
+        stock_before = spare_part.current_stock
         spare_part.current_stock -= quantity
         spare_part.save()
         
@@ -94,9 +105,19 @@ class SparePartViewSet(viewsets.ModelViewSet):
             part=spare_part,
             transaction_type='out',
             quantity=quantity,
+            stock_before=stock_before,
+            stock_after=spare_part.current_stock,
             reference=request.data.get('reference', ''),
-            notes=request.data.get('notes', ''),
-            created_by=request.user
+            remark=request.data.get('notes', ''),
+            operator=request.user,
+        )
+        audit_log(
+            actor=request.user,
+            action='stock_out',
+            entity_type='SparePart',
+            entity_id=spare_part.id,
+            entity_repr=str(spare_part),
+            diff={'quantity': quantity, 'stock_before': stock_before, 'stock_after': spare_part.current_stock},
         )
         
         return Response(SparePartSerializer(spare_part).data)

@@ -21,14 +21,133 @@ services:
       timeout: 5s
       retries: 10
 
+  identity-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${IDENTITY_POSTGRES_DB:-identity}
+      POSTGRES_USER: ${IDENTITY_POSTGRES_USER:-identity}
+      POSTGRES_PASSWORD: ${IDENTITY_POSTGRES_PASSWORD:-identity}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - identity_pgdata:/var/lib/postgresql/data
+
+  audit-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${AUDIT_POSTGRES_DB:-audit}
+      POSTGRES_USER: ${AUDIT_POSTGRES_USER:-audit}
+      POSTGRES_PASSWORD: ${AUDIT_POSTGRES_PASSWORD:-audit}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - audit_pgdata:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  identity:
+    build:
+      context: .
+      dockerfile: services/identity/Dockerfile
+    env_file:
+      - .env.example
+    environment:
+      IDENTITY_POSTGRES_HOST: identity-db
+      JWT_PRIVATE_KEY_PATH: /keys/jwt_private.pem
+      JWT_PUBLIC_KEY_PATH: /keys/jwt_public.pem
+      SERVICE_NAME: identity
+    command: ["sh", "-c", "python services/identity/manage.py migrate --noinput && exec gunicorn --chdir /app/services/identity identity_service.wsgi:application --bind 0.0.0.0:8000"]
+    depends_on:
+      identity-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./keys:/keys:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  audit:
+    build:
+      context: .
+      dockerfile: services/audit/Dockerfile
+    env_file:
+      - .env.example
+    environment:
+      AUDIT_POSTGRES_HOST: audit-db
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: audit
+    command: ["sh", "-c", "python services/audit/manage.py migrate --noinput && exec gunicorn --chdir /app/services/audit audit_service.wsgi:application --bind 0.0.0.0:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+      audit-db:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  audit-consumer:
+    build:
+      context: .
+      dockerfile: services/audit/Dockerfile
+    env_file:
+      - .env.example
+    environment:
+      AUDIT_POSTGRES_HOST: audit-db
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+      SERVICE_NAME: audit
+    command: ["python", "services/audit/manage.py", "consume_events"]
+    depends_on:
+      audit:
+        condition: service_healthy
+      audit-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   web:
     build: .
     env_file:
       - .env.example
+    environment:
+      JWT_PUBLIC_KEY_PATH: /keys/jwt_public.pem
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+    volumes:
+      - ./keys:/keys:ro
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
@@ -40,17 +159,33 @@ services:
     build: .
     env_file:
       - .env.example
+    environment:
+      JWT_PUBLIC_KEY_PATH: /keys/jwt_public.pem
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+    volumes:
+      - ./keys:/keys:ro
     command: ["celery", "-A", "cmms_project", "worker", "-l", "info"]
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      identity:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   celery-beat:
     build: .
     env_file:
       - .env.example
+    environment:
+      JWT_PUBLIC_KEY_PATH: /keys/jwt_public.pem
+      JWKS_URL: http://identity:8000/.well-known/jwks.json
+      EVENT_BUS_URL: amqp://guest:guest@rabbitmq:5672//
+    volumes:
+      - ./keys:/keys:ro
     command:
       - celery
       - -A
@@ -65,11 +200,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      identity:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   gateway:
     image: nginx:1.27-alpine
     depends_on:
       web:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      audit:
         condition: service_healthy
     ports:
       - "80:80"
@@ -78,3 +221,5 @@ services:
 
 volumes:
   pgdata:
+  identity_pgdata:
+  audit_pgdata:

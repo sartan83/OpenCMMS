@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cmms-common"
+version = "0.1.0"
+description = "Shared CMMS migration kernel"
+requires-python = ">=3.10"
+dependencies = [
+    "kombu>=5.3",
+    "jsonschema>=4.0",
+    "PyJWT>=2.8",
+    "cryptography>=41",
+    "djangorestframework>=3.14",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

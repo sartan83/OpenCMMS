@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_id": {
+      "type": "integer"
+    },
+    "part_code": {
+      "type": "string"
+    },
+    "part_id": {
+      "type": "integer"
+    },
+    "quantity": {
+      "type": [
+        "number",
+        "string"
+      ]
+    },
+    "transaction_id": {
+      "type": "integer"
+    },
+    "unit_cost": {
+      "type": [
+        "number",
+        "string",
+        "null"
+      ]
+    },
+    "work_order_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "transaction_id",
+    "part_id",
+    "part_code",
+    "quantity",
+    "unit_cost",
+    "work_order_id",
+    "actor_id"
+  ],
+  "type": "object"
+}

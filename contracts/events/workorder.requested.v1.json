@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset_code": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "integer"
+    },
+    "description": {
+      "type": "string"
+    },
+    "due_date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "inspection_record_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "maintenance_plan_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "priority": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "requested_by_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "source": {
+      "enum": [
+        "maintenance",
+        "inspection"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "wo_type": {
+      "enum": [
+        "PM",
+        "CM"
+      ]
+    }
+  },
+  "required": [
+    "request_id",
+    "source",
+    "asset_id",
+    "asset_code",
+    "wo_type",
+    "priority",
+    "summary",
+    "description",
+    "maintenance_plan_id",
+    "inspection_record_id",
+    "requested_by_id",
+    "due_date"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "full_name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "integer"
+    },
+    "username": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "username",
+    "role",
+    "full_name"
+  ],
+  "type": "object"
+}

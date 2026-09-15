@@ -9,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
+from cmms_common.audit import audit_log
 from .models import MaintenancePlan, WorkOrderTemplate
 from .serializers import (
     MaintenancePlanSerializer,
@@ -95,9 +96,7 @@ class MaintenancePlanViewSet(viewsets.ModelViewSet):
         plan.last_generated_date = timezone.now().date()
         plan.save()
 
-        # Log audit
-        from users.models import AuditLog
-        AuditLog.log(
+        audit_log(
             actor=request.user,
             action='create',
             entity_type='WorkOrder',
