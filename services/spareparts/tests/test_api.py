@@ -64,7 +64,7 @@ def test_stock_actions_and_transaction_filters(client):
     assert client.get(f'/api/spareparts/transactions/?part={part_id}').status_code == 200
     filtered = client.get('/api/spareparts/transactions/?related_work_order=42')
     assert filtered.status_code == 200
-    assert len(filtered.data) == 1
+    assert len(filtered.data['results']) == 1
 
     for path in ('stock_in', 'stock-out'):
         assert client.post(

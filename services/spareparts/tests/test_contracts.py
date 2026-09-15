@@ -21,4 +21,8 @@ def test_transaction_contract(client):
     )
     response = client.get('/api/spareparts/transactions/')
     assert response.status_code == 200
-    assert_matches_contract(response.json()[0], 'spareparts', 'PartTransactionSerializer')
+    assert_matches_contract(
+        response.json()['results'][0],
+        'spareparts',
+        'PartTransactionSerializer',
+    )
